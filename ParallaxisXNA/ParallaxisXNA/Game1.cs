@@ -25,6 +25,8 @@ namespace ParallaxisXNA
         public Vector2 Origin { get; set; }
     }
 
+    public delegate void CreateGravityExplosionDelegate(Vector2 position, float amplitude);
+
     public class Game1 : Microsoft.Xna.Framework.Game
     {
         GraphicsDeviceManager graphics;
@@ -35,6 +37,7 @@ namespace ParallaxisXNA
         List<Ship> ships2;
         List<Planet> planets;
         List<Planet> moons;
+        List<GravityExplosion> gravityExplosions;
 
         List<Ship> selectedShips;
 
@@ -48,7 +51,10 @@ namespace ParallaxisXNA
         Texture2D sparkTexture;
         Texture2D selectedShipTexture;
         Texture2D selectionTexture;
-        Texture2D background;
+        Texture2D backgroundTexture;
+        Texture2D gravityExplosionTexture;
+
+        Effect rippleEffect;
 
         Vector2 planetOrigin;
         Vector2 moonOrigin;
@@ -75,6 +81,9 @@ namespace ParallaxisXNA
         Vector2 planetParallax;
         Vector2 moonParallax;
 
+        RenderTarget2D mainRenderTarget;
+        RenderTarget2D explosionRenderTarget;
+
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -94,6 +103,7 @@ namespace ParallaxisXNA
             planets = new List<Planet>();
             moons = new List<Planet>();
             selectedShips = new List<Ship>();
+            gravityExplosions = new List<GravityExplosion>();
 
             rand = new Random();
 
@@ -128,13 +138,16 @@ namespace ParallaxisXNA
             moonTexture = Content.Load<Texture2D>("moon");
             sparkTexture = Content.Load<Texture2D>("spark");
             selectedShipTexture = Content.Load<Texture2D>("selected_ship");
+            gravityExplosionTexture = Content.Load<Texture2D>("gravity_explosion");
+
+            rippleEffect = Content.Load<Effect>("Ripple");
 
             planetOrigin = new Vector2(planetTexture.Width / 2, planetTexture.Height / 2);
             moonOrigin = new Vector2(moonTexture.Width / 2, moonTexture.Height / 2);
             selectedShipOrigin = new Vector2(selectedShipTexture.Width / 2, selectedShipTexture.Height / 2);
 
             selectionTexture = Content.Load<Texture2D>("selection");
-            background = Content.Load<Texture2D>("space");
+            backgroundTexture = Content.Load<Texture2D>("space");
 
             debugFont = Content.Load<SpriteFont>("debugFont");
 
@@ -147,6 +160,9 @@ namespace ParallaxisXNA
             CreatePlanets();
             CreateMoons();
 
+            mainRenderTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.PresentationParameters.BackBufferWidth, GraphicsDevice.PresentationParameters.BackBufferHeight);
+            explosionRenderTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.PresentationParameters.BackBufferWidth, GraphicsDevice.PresentationParameters.BackBufferHeight);
+
             previousMouseState = Mouse.GetState();
             previousKeyboardState = Keyboard.GetState();
         }
@@ -158,9 +174,44 @@ namespace ParallaxisXNA
 
         protected override void Update(GameTime gameTime)
         {
+            
+            float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            HandleInput();
+
+            ships.RemoveAll(x => x.Hitpoints <= 0);
+            ships2.RemoveAll(x => x.Hitpoints <= 0);
+            selectedShips.RemoveAll(x => x.Hitpoints <= 0);
+
+            foreach (Ship ship in ships)
+            {
+                ship.Update(ships, ships2, elapsed);
+            }
+
+            foreach (Ship ship in ships2)
+            {
+                ship.Update(ships2, ships, elapsed);
+            }
+
+            if (selectedShips.Count == 1)
+            {
+                debugText = "";
+
+                foreach (var prop in selectedShips.First().GetType().GetProperties())
+                {
+                    debugText += prop.Name + " : " + prop.GetValue(selectedShips.First(),null) + "\n";
+                }
+            }
+
+            UpdateGravityExplosions(elapsed);
+
+            base.Update(gameTime);
+        }
+
+        protected void HandleInput()
+        {
             MouseState mouseState = Mouse.GetState();
             KeyboardState keyboardState = Keyboard.GetState();
-            float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
             if (keyboardState.IsKeyDown(Keys.Escape))
                 this.Exit();
@@ -212,7 +263,7 @@ namespace ParallaxisXNA
 
             if (mouseState.LeftButton == ButtonState.Released && previousMouseState.LeftButton == ButtonState.Pressed && isSelecting)
             {
-                if(keyboardState.IsKeyUp(Keys.LeftShift) && keyboardState.IsKeyUp(Keys.RightShift))
+                if (keyboardState.IsKeyUp(Keys.LeftShift) && keyboardState.IsKeyUp(Keys.RightShift))
                     selectedShips.Clear();
 
                 List<Ship> shipsToSelect = (activePlayer == Player.Player1) ? ships : ships2;
@@ -234,7 +285,7 @@ namespace ParallaxisXNA
 
                 bool foundTarget = false;
 
-                foreach (Ship ship in (activePlayer == Player.Player1)?ships2:ships)
+                foreach (Ship ship in (activePlayer == Player.Player1) ? ships2 : ships)
                 {
                     if (ship.IsInside(mousePos))
                     {
@@ -246,7 +297,7 @@ namespace ParallaxisXNA
 
                 if (!foundTarget)
                 {
-                        SetWaypoint(mousePos, keyboardState.IsKeyUp(Keys.LeftShift) && keyboardState.IsKeyUp(Keys.RightShift));
+                    SetWaypoint(mousePos, keyboardState.IsKeyUp(Keys.LeftShift) && keyboardState.IsKeyUp(Keys.RightShift));
                 }
             }
 
@@ -268,7 +319,7 @@ namespace ParallaxisXNA
                 camera.Zoom /= 0.9f;
             }
 
-            if(keyboardState.IsKeyDown(Keys.PageUp) && previousKeyboardState.IsKeyUp(Keys.PageUp))
+            if (keyboardState.IsKeyDown(Keys.PageUp) && previousKeyboardState.IsKeyUp(Keys.PageUp))
             {
                 camera.Zoom /= 0.9f;
             }
@@ -278,43 +329,21 @@ namespace ParallaxisXNA
                 camera.Zoom *= 0.9f;
             }
 
-            ships.RemoveAll(x => x.Hitpoints <= 0);
-            ships2.RemoveAll(x => x.Hitpoints <= 0);
-            selectedShips.RemoveAll(x => x.Hitpoints <= 0);
-
-            foreach (Ship ship in ships)
-            {
-                ship.Update(ships, ships2, elapsed);
-            }
-
-            foreach (Ship ship in ships2)
-            {
-                ship.Update(ships2, ships, elapsed);
-            }
-
-            if (selectedShips.Count == 1)
-            {
-                debugText = "";
-
-                foreach (var prop in selectedShips.First().GetType().GetProperties())
-                {
-                    debugText += prop.Name + " : " + prop.GetValue(selectedShips.First(),null) + "\n";
-                }
-            }
-
             previousMouseState = mouseState;
             previousKeyboardState = keyboardState;
-
-            base.Update(gameTime);
         }
 
         protected override void Draw(GameTime gameTime)
         {
+            GraphicsDevice.SetRenderTarget(mainRenderTarget);
+
+            #region mainRenderTarget Draw
+
             GraphicsDevice.Clear(Color.Black);
 
             spriteBatch.Begin();
 
-            spriteBatch.Draw(background, Vector2.Zero, Color.White);
+            spriteBatch.Draw(backgroundTexture, Vector2.Zero, Color.White);
 
             spriteBatch.End();
 
@@ -351,18 +380,47 @@ namespace ParallaxisXNA
             DrawShips(spriteBatch, ships);
             DrawShips(spriteBatch, ships2);
 
-            if (isSelecting)
+            
+
+            spriteBatch.End();
+
+            #endregion
+
+            GraphicsDevice.SetRenderTarget(explosionRenderTarget);
+
+            GraphicsDevice.Clear(Color.Black);
+
+            spriteBatch.Begin(SpriteSortMode.Deferred, null, null, null, null, null, camera.GetViewMatrix(shipParallax));
+
+            foreach (GravityExplosion explosion in gravityExplosions)
             {
-                spriteBatch.Draw(selectionTexture, selectionRect, null, Color.White * 0.3f, 0.0f, Vector2.Zero, SpriteEffects.None, 1.0f);
+                spriteBatch.Draw(gravityExplosionTexture, explosion.Position, null, Color.White * explosion.Strength, 0.0f, new Vector2(gravityExplosionTexture.Width / 2, gravityExplosionTexture.Height / 2), explosion.Scale, SpriteEffects.None, 1.0f);
             }
 
             spriteBatch.End();
 
-            spriteBatch.Begin();
+            GraphicsDevice.SetRenderTarget(null);
+
+            GraphicsDevice.SetRenderTarget(null);
+
+            spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
+
+            rippleEffect.Parameters["RippleTexture"].SetValue(explosionRenderTarget);
+
+            rippleEffect.CurrentTechnique.Passes[0].Apply();
+
+            spriteBatch.Draw(mainRenderTarget, new Vector2(0, 0), Color.White);
 
             spriteBatch.DrawString(debugFont, debugText, new Vector2(10, 10), Color.White);
 
-            //spriteBatch.DrawString(debugFont, "+", new Vector2(viewportRect.Width/2, viewportRect.Height/2) * scale + scroll, Color.White);
+            spriteBatch.End();
+
+            spriteBatch.Begin(SpriteSortMode.Deferred, null, null, null, null, null, camera.GetViewMatrix(shipParallax));
+
+            if (isSelecting)
+            {
+                spriteBatch.Draw(selectionTexture, selectionRect, null, Color.White * 0.3f, 0.0f, Vector2.Zero, SpriteEffects.None, 1.0f);
+            }
 
             spriteBatch.End();
 
@@ -405,6 +463,11 @@ namespace ParallaxisXNA
             ships.Add(ShipFactory.CreateShip(ShipType.OrbitalCommand1, new Vector2(rand.Next(0, viewportRect.Width), rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
             ships.Add(ShipFactory.CreateShip(ShipType.OrbitalCommand1, new Vector2(rand.Next(0, viewportRect.Width), rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
             ships.Add(ShipFactory.CreateShip(ShipType.Dreadnaught, new Vector2(rand.Next(0, viewportRect.Width), rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
+
+            foreach (Ship ship in ships)
+            {
+                ship.CreateGravityExplosion = CreateGravityExplosion;
+            }
         }
 
         private void CreateShips2()
@@ -417,6 +480,11 @@ namespace ParallaxisXNA
             ships2.Add(ShipFactory.CreateShip(ShipType.OrbitalCommand2, new Vector2(rand.Next(0, viewportRect.Width), rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
             ships2.Add(ShipFactory.CreateShip(ShipType.OrbitalCommand2, new Vector2(rand.Next(0, viewportRect.Width), rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
             ships2.Add(ShipFactory.CreateShip(ShipType.Dreadnaught, new Vector2(rand.Next(0, viewportRect.Width), rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
+
+            foreach (Ship ship in ships2)
+            {
+                ship.CreateGravityExplosion = CreateGravityExplosion;
+            }
         }
 
         private void Reset()
@@ -481,6 +549,41 @@ namespace ParallaxisXNA
                 ship.Waypoints.Enqueue(waypoint);
                 ship.Target = null;
             }
+        }
+
+        private void UpdateGravityExplosions(float elapsed)
+        {
+            foreach (GravityExplosion explosion in gravityExplosions)
+            {
+                explosion.TTL -= elapsed;
+                explosion.Scale += 2.0f * elapsed * explosion.Amplitude;
+                explosion.Strength -= 0.05f * elapsed;
+                if (explosion.Force > 0.0f)
+                    explosion.Force -= 0.5f * elapsed;
+                else
+                    explosion.Force = 0.0f;
+
+                List<Ship> allShips = new List<Ship>();
+                allShips.AddRange(ships);
+                allShips.AddRange(ships2);
+
+                foreach (Ship ship in allShips)
+                {
+                    Vector2 distance = ship.Position - explosion.Position;
+                    if (distance.Length() < gravityExplosionTexture.Width / 2 * explosion.Scale)
+                    {
+                        distance.Normalize();
+                        ship.Velocity += distance / ship.Mass * explosion.Force;
+                    }
+                }
+            }
+
+            gravityExplosions.RemoveAll(explosion => explosion.TTL < 0.0f);
+        }
+
+        public void CreateGravityExplosion(Vector2 position, float amplitude)
+        {
+            gravityExplosions.Add(new GravityExplosion(new Vector2(position.X, position.Y), 4.0f, 0.01f, 0.05f, amplitude, 1.0f));
         }
     }
 }

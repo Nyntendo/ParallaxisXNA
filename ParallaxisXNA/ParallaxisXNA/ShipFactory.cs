@@ -38,8 +38,8 @@ namespace ParallaxisXNA
                     ship.WeaponRange = 2000.0f;
                     ship.WeaponAimRange = 500.0f;
                     ship.WeaponVelocity = 5.0f;
-                    ship.Hitpoints = 500;
-                    ship.Mass = 20.0f;
+                    ship.Hitpoints = 50;
+                    ship.Mass = 5.0f;
                     ship.ClickRadius = 40.0f;
                     ship.AvoidRadius = 100.0f;
                     ship.IsPushedByImpacts = false;
@@ -53,12 +53,12 @@ namespace ParallaxisXNA
                     ship.Velocity = velocity;
                     ship.WeaponReloadTime = 0.1f;
                     ship.NumberShots = 10;
-                    ship.MaxSpeed = 4.0f;
-                    ship.MaxForce = 0.09f;
+                    ship.MaxSpeed = 3.0f;
+                    ship.MaxForce = 0.05f;
                     ship.WeaponRange = 2000.0f;
                     ship.WeaponAimRange = 500.0f;
                     ship.WeaponVelocity = 5.0f;
-                    ship.Hitpoints = 500;
+                    ship.Hitpoints = 50;
                     ship.Mass = 20.0f;
                     ship.ClickRadius = 40.0f;
                     ship.AvoidRadius = 100.0f;

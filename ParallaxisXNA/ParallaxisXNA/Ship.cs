@@ -63,7 +63,9 @@ namespace ParallaxisXNA
         public bool IsDead { get; set; }
         public bool IsPushedByImpacts { get; set; }
         public ImpactBehaviour OnImpactBehaviour { get; set; }
-        public Queue<Vector2> Waypoints { get; set; } 
+        public Queue<Vector2> Waypoints { get; set; }
+
+        public CreateGravityExplosionDelegate CreateGravityExplosion { get; set; }
 
         public Ship(ShipType shipType)
         {
@@ -216,6 +218,7 @@ namespace ParallaxisXNA
                             {
                                 Target = null;
                                 enemy.IsDead = true;
+                                CreateGravityExplosion(enemy.Position, enemy.Mass);
                             }
                         }
                     }
