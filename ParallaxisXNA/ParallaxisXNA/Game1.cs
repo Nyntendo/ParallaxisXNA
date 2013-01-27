@@ -29,6 +29,10 @@ namespace ParallaxisXNA
 
     public class Game1 : Microsoft.Xna.Framework.Game
     {
+        BloomComponent bloom;
+
+        int currentBloomSetting = 0;
+
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         Rectangle viewportRect;
@@ -59,6 +63,7 @@ namespace ParallaxisXNA
         Vector2 planetOrigin;
         Vector2 moonOrigin;
         Vector2 selectedShipOrigin;
+        Vector2 sparkOrigin;
 
         int numberShips = 100;
         int numberPlanets = 1;
@@ -92,6 +97,10 @@ namespace ParallaxisXNA
             graphics.IsFullScreen = true;
             IsMouseVisible = true;
             Content.RootDirectory = "Content";
+
+            bloom = new BloomComponent(this);
+
+            Components.Add(bloom);
         }
 
         protected override void Initialize()
@@ -136,7 +145,7 @@ namespace ParallaxisXNA
 
             planetTexture = Content.Load<Texture2D>("venus");
             moonTexture = Content.Load<Texture2D>("moon");
-            sparkTexture = Content.Load<Texture2D>("spark");
+            sparkTexture = Content.Load<Texture2D>("biggerspark");
             selectedShipTexture = Content.Load<Texture2D>("selected_ship");
             gravityExplosionTexture = Content.Load<Texture2D>("gravity_explosion");
 
@@ -145,6 +154,7 @@ namespace ParallaxisXNA
             planetOrigin = new Vector2(planetTexture.Width / 2, planetTexture.Height / 2);
             moonOrigin = new Vector2(moonTexture.Width / 2, moonTexture.Height / 2);
             selectedShipOrigin = new Vector2(selectedShipTexture.Width / 2, selectedShipTexture.Height / 2);
+            sparkOrigin = new Vector2(sparkTexture.Width / 2, sparkTexture.Height / 2);
 
             selectionTexture = Content.Load<Texture2D>("selection");
             backgroundTexture = Content.Load<Texture2D>("space");
@@ -165,6 +175,8 @@ namespace ParallaxisXNA
 
             previousMouseState = Mouse.GetState();
             previousKeyboardState = Keyboard.GetState();
+
+            bloom.Settings = BloomSettings.PresetSettings[currentBloomSetting];
         }
 
         protected override void UnloadContent()
@@ -329,12 +341,28 @@ namespace ParallaxisXNA
                 camera.Zoom *= 0.9f;
             }
 
+            if (keyboardState.IsKeyDown(Keys.Add) && previousKeyboardState.IsKeyUp(Keys.Add))
+            {
+                if (currentBloomSetting < BloomSettings.PresetSettings.Length -1)
+                    currentBloomSetting++;
+                bloom.Settings = BloomSettings.PresetSettings[currentBloomSetting];
+            }
+
+            if (keyboardState.IsKeyDown(Keys.Subtract) && previousKeyboardState.IsKeyUp(Keys.Subtract))
+            {
+                if (currentBloomSetting > 0)
+                    currentBloomSetting--;
+                bloom.Settings = BloomSettings.PresetSettings[currentBloomSetting];
+            }
+
             previousMouseState = mouseState;
             previousKeyboardState = keyboardState;
         }
 
         protected override void Draw(GameTime gameTime)
         {
+            
+
             GraphicsDevice.SetRenderTarget(mainRenderTarget);
 
             #region mainRenderTarget Draw
@@ -365,15 +393,15 @@ namespace ParallaxisXNA
 
             spriteBatch.End();
 
-            spriteBatch.Begin(SpriteSortMode.Deferred, null, null, null, null, null, camera.GetViewMatrix(shipParallax));
+            spriteBatch.Begin(SpriteSortMode.FrontToBack, null, null, null, null, null, camera.GetViewMatrix(shipParallax));
 
             foreach (Ship ship in selectedShips)
             {
-                spriteBatch.Draw(selectedShipTexture, ship.Position, null, Color.White * 0.5f, 0.0f, selectedShipOrigin, 1.0f, SpriteEffects.None, 0.4f);
+                spriteBatch.Draw(selectedShipTexture, ship.Position, null, Color.White * 0.5f, 0.0f, selectedShipOrigin, 1.0f, SpriteEffects.None, 0.55f);
 
                 if (ship.Target != null)
                 {
-                    spriteBatch.Draw(selectedShipTexture, ship.Target.Position, null, Color.Red * 0.5f, 0.0f, selectedShipOrigin, 1.0f, SpriteEffects.None, 0.4f);
+                    spriteBatch.Draw(selectedShipTexture, ship.Target.Position, null, Color.Red * 0.5f, 0.0f, selectedShipOrigin, 1.0f, SpriteEffects.None, 0.55f);
                 }
             }
 
@@ -399,9 +427,7 @@ namespace ParallaxisXNA
 
             spriteBatch.End();
 
-            GraphicsDevice.SetRenderTarget(null);
-
-            GraphicsDevice.SetRenderTarget(null);
+            bloom.BeginDraw();
 
             spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
 
@@ -448,7 +474,7 @@ namespace ParallaxisXNA
                 foreach (Spark spark in ship.Sparks)
                 {
                     if (spark.Visible)
-                        spriteBatch.Draw(sparkTexture, spark.Position, null, spark.Color, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.9f);
+                        spriteBatch.Draw(sparkTexture, spark.Position, null, spark.Color * spark.Opacity, 0.0f, sparkOrigin, spark.Scale, SpriteEffects.None, 0.9f);
                 }
             }
         }
@@ -457,12 +483,12 @@ namespace ParallaxisXNA
         {
             for (int i = 0; i < numberShips; i++)
             {
-                ships.Add(ShipFactory.CreateShip(ShipType.Fighter1, new Vector2(rand.Next(0, viewportRect.Width), rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
+                ships.Add(ShipFactory.CreateShip(ShipType.Fighter1, new Vector2(rand.Next(0, viewportRect.Width) - 2000, rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
             }
 
-            ships.Add(ShipFactory.CreateShip(ShipType.OrbitalCommand1, new Vector2(rand.Next(0, viewportRect.Width), rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
-            ships.Add(ShipFactory.CreateShip(ShipType.OrbitalCommand1, new Vector2(rand.Next(0, viewportRect.Width), rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
-            ships.Add(ShipFactory.CreateShip(ShipType.Dreadnaught, new Vector2(rand.Next(0, viewportRect.Width), rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
+            ships.Add(ShipFactory.CreateShip(ShipType.OrbitalCommand1, new Vector2(rand.Next(0, viewportRect.Width) - 2000, rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
+            ships.Add(ShipFactory.CreateShip(ShipType.OrbitalCommand1, new Vector2(rand.Next(0, viewportRect.Width) - 2000, rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
+            ships.Add(ShipFactory.CreateShip(ShipType.Dreadnaught, new Vector2(rand.Next(0, viewportRect.Width) - 2000, rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
 
             foreach (Ship ship in ships)
             {
@@ -474,12 +500,12 @@ namespace ParallaxisXNA
         {
             for (int i = 0; i < numberShips; i++)
             {
-                ships2.Add(ShipFactory.CreateShip(ShipType.Fighter2, new Vector2(rand.Next(0, viewportRect.Width), rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
+                ships2.Add(ShipFactory.CreateShip(ShipType.Fighter2, new Vector2(rand.Next(0, viewportRect.Width) + 2000, rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
             }
 
-            ships2.Add(ShipFactory.CreateShip(ShipType.OrbitalCommand2, new Vector2(rand.Next(0, viewportRect.Width), rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
-            ships2.Add(ShipFactory.CreateShip(ShipType.OrbitalCommand2, new Vector2(rand.Next(0, viewportRect.Width), rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
-            ships2.Add(ShipFactory.CreateShip(ShipType.Dreadnaught, new Vector2(rand.Next(0, viewportRect.Width), rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
+            ships2.Add(ShipFactory.CreateShip(ShipType.OrbitalCommand2, new Vector2(rand.Next(0, viewportRect.Width) + 2000, rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
+            ships2.Add(ShipFactory.CreateShip(ShipType.OrbitalCommand2, new Vector2(rand.Next(0, viewportRect.Width) + 2000, rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
+            ships2.Add(ShipFactory.CreateShip(ShipType.Dreadnaught, new Vector2(rand.Next(0, viewportRect.Width) + 2000, rand.Next(0, viewportRect.Height)), new Vector2(rand.Next(-1, 2), rand.Next(-1, 2))));
 
             foreach (Ship ship in ships2)
             {

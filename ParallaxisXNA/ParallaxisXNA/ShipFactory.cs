@@ -40,7 +40,8 @@ namespace ParallaxisXNA
                     ship.WeaponVelocity = 5.0f;
                     ship.Hitpoints = 50;
                     ship.Mass = 5.0f;
-                    ship.ClickRadius = 40.0f;
+                    ship.ClickRadius = 100.0f;
+                    ship.HitRadius = 50.0f;
                     ship.AvoidRadius = 100.0f;
                     ship.IsPushedByImpacts = false;
                     ship.OnImpactBehaviour = Ship.ImpactBehaviour.SwitchTargetIfCurrentIsOutOfSight;
@@ -58,10 +59,11 @@ namespace ParallaxisXNA
                     ship.WeaponRange = 2000.0f;
                     ship.WeaponAimRange = 500.0f;
                     ship.WeaponVelocity = 5.0f;
-                    ship.Hitpoints = 50;
+                    ship.Hitpoints = 200;
                     ship.Mass = 20.0f;
-                    ship.ClickRadius = 40.0f;
-                    ship.AvoidRadius = 100.0f;
+                    ship.ClickRadius = 200.0f;
+                    ship.HitRadius = 100.0f;
+                    ship.AvoidRadius = 150.0f;
                     ship.IsPushedByImpacts = false;
                     ship.OnImpactBehaviour = Ship.ImpactBehaviour.SwitchTargetIfCurrentIsOutOfSight;
                     ship.ShotType = ShotTypes.Homing;

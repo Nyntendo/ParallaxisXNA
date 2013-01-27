@@ -107,6 +107,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BloomComponent.cs" />
+    <Compile Include="BloomSettings.cs" />
     <Compile Include="Camera.cs" />
     <Compile Include="GravityExplosion.cs" />
     <Compile Include="Planet.cs" />

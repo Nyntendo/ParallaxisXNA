@@ -19,6 +19,9 @@ namespace ParallaxisXNA
         public float TTL { get; set; }
         public bool Visible { get; set; }
         public Color Color { get; set; }
+        public float Scale { get; set; }
+        public float Opacity { get; set; }
+        public float OriginalTTL { get; set; }
 
         public Spark()
         {
@@ -27,6 +30,10 @@ namespace ParallaxisXNA
             TTL = 0;
             Visible = false;
             Color = Color.White;
+            Scale = 1.0f;
+            Opacity = 1.0f;
         }
+
+        public static Color[] Colors = {Color.Yellow, Color.LightYellow, Color.White };
     }
 }

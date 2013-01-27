@@ -120,7 +120,7 @@ namespace ParallaxisXNA
                 Shots.Add(new Shot(ShotType));
             }
 
-            NumberSparks = 40;
+            NumberSparks = 200;
 
             Sparks = new List<Spark>();
             for (int i = 0; i < NumberSparks; i++)
@@ -208,7 +208,7 @@ namespace ParallaxisXNA
                         if (Vector2.Subtract(shot.Position, enemy.Position).Length() < enemy.HitRadius && !enemy.IsDead)
                         {
                             shot.Visible = false;
-                            CreateExplosion(enemy.Position.X, enemy.Position.Y, 40);
+                            CreateExplosion(enemy.Position.X, enemy.Position.Y, 25, 1);
                             if (IsPushedByImpacts)
                                 enemy.Acceleration += shot.Velocity * (shot.Mass / enemy.Mass);
                             if (enemy.OnImpactBehaviour == ImpactBehaviour.SwitchTarget || (enemy.OnImpactBehaviour == ImpactBehaviour.SwitchTargetIfCurrentIsOutOfSight && enemy.TargetIsOutOfSight))
@@ -218,6 +218,7 @@ namespace ParallaxisXNA
                             {
                                 Target = null;
                                 enemy.IsDead = true;
+                                CreateExplosion(enemy.Position.X, enemy.Position.Y, 100, 2);
                                 CreateGravityExplosion(enemy.Position, enemy.Mass);
                             }
                         }
@@ -235,6 +236,8 @@ namespace ParallaxisXNA
                 {
                     spark.Position += spark.Velocity;
                     spark.TTL -= elapsed;
+                    spark.Opacity -= elapsed / spark.OriginalTTL / 1.0f;
+                    spark.Scale += elapsed / spark.OriginalTTL * 1.0f;
                     if (spark.TTL <= 0)
                     {
                         spark.Visible = false;
@@ -455,7 +458,7 @@ namespace ParallaxisXNA
             }
         }
 
-        private void CreateExplosion(float x, float y, int numberSparks)
+        private void CreateExplosion(float x, float y, int numberSparks, float duration)
         {
             Random rand = new Random((int)(x * y));
             int sparksCreated = 0;
@@ -464,10 +467,13 @@ namespace ParallaxisXNA
                 if (!spark.Visible)
                 {
                     spark.Position = new Vector2(x, y);
-                    spark.Velocity = new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()) * rand.Next(1, 2);
-                    spark.TTL = (float)rand.NextDouble() * 0.4f + 0.2f;
+                    spark.Velocity = new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()) * rand.Next(1, 3);
+                    spark.TTL = ((float)rand.NextDouble() * 0.6f + 0.4f) * duration;
+                    spark.OriginalTTL = spark.TTL;
+                    spark.Scale = 1.0f;
+                    spark.Opacity = 1.0f;
                     spark.Visible = true;
-                    spark.Color = new Color(255, 255, rand.Next(163,255));
+                    spark.Color = Spark.Colors[rand.Next(0, Spark.Colors.Length)];
                     sparksCreated++;
                     if (sparksCreated > numberSparks - 1)
                     {
