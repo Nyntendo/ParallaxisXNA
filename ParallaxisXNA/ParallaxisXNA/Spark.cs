@@ -34,6 +34,6 @@ namespace ParallaxisXNA
             Opacity = 1.0f;
         }
 
-        public static Color[] Colors = {Color.Yellow, Color.LightYellow, Color.White };
+        public static Color[] Colors = {Color.Yellow, Color.LightGoldenrodYellow, Color.LightYellow, Color.White };
     }
 }

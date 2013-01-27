@@ -208,7 +208,7 @@ namespace ParallaxisXNA
                         if (Vector2.Subtract(shot.Position, enemy.Position).Length() < enemy.HitRadius && !enemy.IsDead)
                         {
                             shot.Visible = false;
-                            CreateExplosion(enemy.Position.X, enemy.Position.Y, 25, 1);
+                            CreateExplosion(shot.Position.X, shot.Position.Y, 25, 1);
                             if (IsPushedByImpacts)
                                 enemy.Acceleration += shot.Velocity * (shot.Mass / enemy.Mass);
                             if (enemy.OnImpactBehaviour == ImpactBehaviour.SwitchTarget || (enemy.OnImpactBehaviour == ImpactBehaviour.SwitchTargetIfCurrentIsOutOfSight && enemy.TargetIsOutOfSight))
@@ -237,7 +237,7 @@ namespace ParallaxisXNA
                     spark.Position += spark.Velocity;
                     spark.TTL -= elapsed;
                     spark.Opacity -= elapsed / spark.OriginalTTL / 1.0f;
-                    spark.Scale += elapsed / spark.OriginalTTL * 1.0f;
+                    spark.Scale += elapsed / spark.OriginalTTL * 2.0f;
                     if (spark.TTL <= 0)
                     {
                         spark.Visible = false;

@@ -211,8 +211,12 @@ namespace ParallaxisXNA
 
                 foreach (var prop in selectedShips.First().GetType().GetProperties())
                 {
-                    debugText += prop.Name + " : " + prop.GetValue(selectedShips.First(),null) + "\n";
+                    debugText += prop.Name + " : " + prop.GetValue(selectedShips.First(), null) + "\n";
                 }
+            }
+            else
+            {
+                debugText = "";
             }
 
             UpdateGravityExplosions(elapsed);
@@ -355,6 +359,11 @@ namespace ParallaxisXNA
                 bloom.Settings = BloomSettings.PresetSettings[currentBloomSetting];
             }
 
+            if (keyboardState.IsKeyDown(Keys.Multiply) && previousKeyboardState.IsKeyUp(Keys.Multiply))
+            {
+                bloom.Visible = !bloom.Visible;
+            }
+
             previousMouseState = mouseState;
             previousKeyboardState = keyboardState;
         }
@@ -427,7 +436,10 @@ namespace ParallaxisXNA
 
             spriteBatch.End();
 
-            bloom.BeginDraw();
+            if (bloom.Visible)
+                bloom.BeginDraw();
+            else
+                GraphicsDevice.SetRenderTarget(null);
 
             spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
 
