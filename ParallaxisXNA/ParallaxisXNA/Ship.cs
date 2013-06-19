@@ -65,6 +65,8 @@ namespace ParallaxisXNA
         public ImpactBehaviour OnImpactBehaviour { get; set; }
         public Queue<Vector2> Waypoints { get; set; }
 
+        private Random rand;
+
         public CreateGravityExplosionDelegate CreateGravityExplosion { get; set; }
 
         public Ship(ShipType shipType)
@@ -120,7 +122,7 @@ namespace ParallaxisXNA
                 Shots.Add(new Shot(ShotType));
             }
 
-            NumberSparks = 200;
+            NumberSparks = 400;
 
             Sparks = new List<Spark>();
             for (int i = 0; i < NumberSparks; i++)
@@ -135,6 +137,8 @@ namespace ParallaxisXNA
             OnImpactBehaviour = ImpactBehaviour.SwitchTarget;
 
             Waypoints = new Queue<Vector2>();
+
+            rand = new Random();
         }
 
         public void Update(List<Ship> ships, List<Ship> enemies, float elapsed)
@@ -208,7 +212,7 @@ namespace ParallaxisXNA
                         if (Vector2.Subtract(shot.Position, enemy.Position).Length() < enemy.HitRadius && !enemy.IsDead)
                         {
                             shot.Visible = false;
-                            CreateExplosion(shot.Position.X, shot.Position.Y, 25, 1);
+                            CreateExplosion(shot.Position.X, shot.Position.Y, 100, 1);
                             if (IsPushedByImpacts)
                                 enemy.Acceleration += shot.Velocity * (shot.Mass / enemy.Mass);
                             if (enemy.OnImpactBehaviour == ImpactBehaviour.SwitchTarget || (enemy.OnImpactBehaviour == ImpactBehaviour.SwitchTargetIfCurrentIsOutOfSight && enemy.TargetIsOutOfSight))
@@ -218,7 +222,7 @@ namespace ParallaxisXNA
                             {
                                 Target = null;
                                 enemy.IsDead = true;
-                                CreateExplosion(enemy.Position.X, enemy.Position.Y, 100, 2);
+                                CreateExplosion(enemy.Position.X, enemy.Position.Y, 400, 4 + enemy.Mass / 4);
                                 CreateGravityExplosion(enemy.Position, enemy.Mass);
                             }
                         }
@@ -236,8 +240,8 @@ namespace ParallaxisXNA
                 {
                     spark.Position += spark.Velocity;
                     spark.TTL -= elapsed;
-                    spark.Opacity -= elapsed / spark.OriginalTTL / 1.0f;
-                    spark.Scale += elapsed / spark.OriginalTTL * 2.0f;
+                    spark.Opacity -= elapsed / spark.OriginalTTL / spark.Velocity.Length();
+                    spark.Scale += elapsed / spark.OriginalTTL * 4.0f;
                     if (spark.TTL <= 0)
                     {
                         spark.Visible = false;
@@ -460,22 +464,77 @@ namespace ParallaxisXNA
 
         private void CreateExplosion(float x, float y, int numberSparks, float duration)
         {
-            Random rand = new Random((int)(x * y));
             int sparksCreated = 0;
             foreach (Spark spark in Sparks)
             {
                 if (!spark.Visible)
                 {
-                    spark.Position = new Vector2(x, y);
-                    spark.Velocity = new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()) * rand.Next(1, 3);
-                    spark.TTL = ((float)rand.NextDouble() * 0.6f + 0.4f) * duration;
-                    spark.OriginalTTL = spark.TTL;
-                    spark.Scale = 1.0f;
-                    spark.Opacity = 1.0f;
-                    spark.Visible = true;
-                    spark.Color = Spark.Colors[rand.Next(0, Spark.Colors.Length)];
-                    sparksCreated++;
-                    if (sparksCreated > numberSparks - 1)
+                    /*
+                    if (sparksCreated < numberSparks / 2 && numberSparks > 50)
+                    {
+                        spark.Position = new Vector2(x, y);
+                        spark.Velocity = new Vector2((float)rand.NextDouble() - 0.5f, (float)rand.NextDouble() - 0.5f);
+                        spark.Velocity.Normalize();
+                        spark.Velocity *= rand.Next(2, 3);
+                        spark.TTL = ((float)rand.NextDouble() * 1f + 0.5f) * duration;
+                        spark.OriginalTTL = spark.TTL;
+                        spark.Scale = 8.0f;
+                        spark.Opacity = 0.3f;
+                        spark.Visible = true;
+                        spark.Color = Color.Black;
+                        sparksCreated++;
+                    }
+                    else if (sparksCreated < numberSparks * 1.5f)
+                    {
+                        spark.Position = new Vector2(x, y);
+                        spark.Velocity = new Vector2((float)rand.NextDouble() - 0.5f, (float)rand.NextDouble() - 0.5f);
+                        spark.Velocity.Normalize();
+                        spark.Velocity *= rand.Next(10, 15);
+                        spark.TTL = ((float)rand.NextDouble() * 0.2f + 0.2f) * duration;
+                        spark.OriginalTTL = spark.TTL;
+                        spark.Scale = 0.3f;
+                        spark.Opacity = 1.0f;
+                        spark.Visible = true;
+                        spark.Color = Spark.Colors[rand.Next(0, Spark.Colors.Length)];
+                        sparksCreated++;
+                    }
+                    else if (sparksCreated < numberSparks * 1.75f && numberSparks > 50)
+                    {
+                        spark.Position = new Vector2(x, y);
+                        spark.Velocity = new Vector2((float)rand.NextDouble() - 0.5f, (float)rand.NextDouble() - 0.5f);
+                        spark.Velocity.Normalize();
+                        spark.Velocity *= rand.Next(2, 3);
+                        spark.TTL = ((float)rand.NextDouble() * 0.07f + 0.07f) * duration;
+                        spark.OriginalTTL = spark.TTL;
+                        spark.Scale = 3f;
+                        spark.Opacity = 2.0f;
+                        spark.Visible = true;
+                        spark.Color = Color.LightYellow;
+                        sparksCreated++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                     * */
+                    if (sparksCreated < numberSparks - 1)
+                    {
+                        spark.Position = new Vector2(x, y);
+                        spark.Rotation = (float)(rand.NextDouble() * 2 * Math.PI);
+                        //spark.Velocity = new Vector2((float)rand.NextDouble() - 0.5f, (float)rand.NextDouble() - 0.5f);
+                        //spark.Velocity.Normalize();
+                        //spark.Velocity *= rand.Next(1, 3);
+                        spark.Velocity = new Vector2((float)Math.Cos(spark.Rotation), (float)Math.Sin(spark.Rotation)) * rand.Next(1, 20) / 10.0f;
+                        spark.TTL = ((float)rand.NextDouble() * 0.3f + 0.3f) * duration;
+                        spark.OriginalTTL = spark.TTL;
+                        spark.Scale = 0.5f;
+                        spark.Opacity = 1.0f;
+                        
+                        spark.Visible = true;
+                        spark.Color = Spark.Colors[rand.Next(0, Spark.Colors.Length)];
+                        sparksCreated++;
+                    }
+                    else
                     {
                         break;
                     }

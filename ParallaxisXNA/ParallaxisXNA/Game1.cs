@@ -145,7 +145,7 @@ namespace ParallaxisXNA
 
             planetTexture = Content.Load<Texture2D>("venus");
             moonTexture = Content.Load<Texture2D>("moon");
-            sparkTexture = Content.Load<Texture2D>("biggerspark");
+            sparkTexture = Content.Load<Texture2D>("bigspark");
             selectedShipTexture = Content.Load<Texture2D>("selected_ship");
             gravityExplosionTexture = Content.Load<Texture2D>("gravity_explosion");
 
@@ -486,7 +486,7 @@ namespace ParallaxisXNA
                 foreach (Spark spark in ship.Sparks)
                 {
                     if (spark.Visible)
-                        spriteBatch.Draw(sparkTexture, spark.Position, null, spark.Color * spark.Opacity, 0.0f, sparkOrigin, spark.Scale, SpriteEffects.None, 0.9f);
+                        spriteBatch.Draw(sparkTexture, spark.Position, null, spark.Color * spark.Opacity, spark.Rotation, sparkOrigin, spark.Scale, SpriteEffects.None, 0.9f);
                 }
             }
         }

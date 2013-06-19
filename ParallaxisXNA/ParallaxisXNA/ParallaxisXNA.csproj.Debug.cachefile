@@ -2,7 +2,6 @@ Content\ship.xnb
 Content\planet.xnb
 Content\shot.xnb
 Content\ship2.xnb
-Content\debugFont.xnb
 Content\selected_ship.xnb
 Content\selection.xnb
 Content\orbital_command.xnb
@@ -14,9 +13,11 @@ Content\spark.xnb
 Content\shot2.xnb
 Content\dreadnaught.xnb
 Content\gravity_explosion.xnb
-Content\Ripple.xnb
 Content\bigspark.xnb
+Content\biggerspark.xnb
+Content\spark2.xnb
+Content\debugFont.xnb
+Content\Ripple.xnb
 Content\BloomCombine.xnb
 Content\BloomExtract.xnb
 Content\GaussianBlur.xnb
-Content\biggerspark.xnb

@@ -22,6 +22,7 @@ namespace ParallaxisXNA
         public float Scale { get; set; }
         public float Opacity { get; set; }
         public float OriginalTTL { get; set; }
+        public float Rotation { get; set; }
 
         public Spark()
         {
@@ -32,8 +33,9 @@ namespace ParallaxisXNA
             Color = Color.White;
             Scale = 1.0f;
             Opacity = 1.0f;
+            Rotation = 0.0f;
         }
 
-        public static Color[] Colors = {Color.Yellow, Color.LightGoldenrodYellow, Color.LightYellow, Color.White };
+        public static Color[] Colors = {Color.LightYellow };
     }
 }
